@@ -102,3 +102,24 @@ export async function deleteDriver(id: string) {
   revalidatePath("/drivers");
   return { success: true };
 }
+
+export async function updateSafetyScore(id: string, score: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  // Safety Officer and Fleet Manager can adjust scores
+  const role = (session.user as { role: string }).role;
+  if (!["FLEET_MANAGER", "SAFETY_OFFICER"].includes(role)) {
+    throw new Error("Unauthorized — Fleet Manager or Safety Officer required");
+  }
+
+  const clamped = Math.min(100, Math.max(0, Math.round(score)));
+  await prisma.driver.update({
+    where: { id },
+    data: { safetyScore: clamped },
+  });
+
+  revalidatePath("/drivers");
+  revalidatePath("/safety");
+  revalidatePath("/dashboard");
+  return { success: true };
+}

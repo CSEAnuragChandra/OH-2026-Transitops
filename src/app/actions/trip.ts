@@ -176,3 +176,18 @@ export async function cancelTrip(tripId: string) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export async function updateTrip(id: string, formData: FormData) {
+  await requireDispatcherOrManager();
+
+  const trip = await prisma.trip.findUnique({ where: { id } });
+  if (!trip) throw new Error("Trip not found");
+  if (trip.status !== "DRAFT") throw new Error("Only DRAFT trips can be edited");
+
+  const raw = Object.fromEntries(formData.entries());
+  const data = TripSchema.parse(raw);
+
+  await prisma.trip.update({ where: { id }, data });
+  revalidatePath("/trips");
+  return { success: true };
+}

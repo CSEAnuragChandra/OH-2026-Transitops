@@ -4,15 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ModalForm, FormField, FormInput, FormActions } from "@/components/ui/modal-form";
-import { createTrip } from "@/app/actions/trip";
+import { createTrip, updateTrip } from "@/app/actions/trip";
 
 interface TripFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   nextCode: string;
+  editTrip?: {
+    id: string;
+    code: string;
+    source: string;
+    destination: string;
+    cargoWeight: number;
+    plannedDistance: number;
+  } | null;
 }
 
-export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
+export function TripForm({ open, onOpenChange, nextCode, editTrip }: TripFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -21,8 +29,13 @@ export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
     setLoading(true);
     try {
       const formData = new FormData(e.currentTarget);
-      await createTrip(formData);
-      toast.success("Trip created as DRAFT");
+      if (editTrip) {
+        await updateTrip(editTrip.id, formData);
+        toast.success("Trip updated successfully");
+      } else {
+        await createTrip(formData);
+        toast.success("Trip created as DRAFT");
+      }
       onOpenChange(false);
       router.refresh();
     } catch (err) {
@@ -36,8 +49,8 @@ export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
     <ModalForm
       open={open}
       onOpenChange={onOpenChange}
-      title="Create New Trip"
-      description="Trips start as DRAFT. Assign a vehicle and driver to dispatch."
+      title={editTrip ? "Edit Trip" : "Create New Trip"}
+      description={editTrip ? "Update trip details." : "Trips start as DRAFT. Assign a vehicle and driver to dispatch."}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Trip Code">
@@ -45,16 +58,16 @@ export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
             name="code"
             placeholder="e.g., TR004"
             required
-            defaultValue={nextCode}
+            defaultValue={editTrip?.code ?? nextCode}
           />
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Source">
-            <FormInput name="source" placeholder="e.g., Mumbai" required />
+            <FormInput name="source" placeholder="e.g., Mumbai" required defaultValue={editTrip?.source} />
           </FormField>
           <FormField label="Destination">
-            <FormInput name="destination" placeholder="e.g., Delhi" required />
+            <FormInput name="destination" placeholder="e.g., Delhi" required defaultValue={editTrip?.destination} />
           </FormField>
         </div>
 
@@ -67,6 +80,7 @@ export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
               min="0.1"
               placeholder="e.g., 10"
               required
+              defaultValue={editTrip?.cargoWeight}
             />
           </FormField>
           <FormField label="Planned Distance (km)">
@@ -77,11 +91,12 @@ export function TripForm({ open, onOpenChange, nextCode }: TripFormProps) {
               min="1"
               placeholder="e.g., 1400"
               required
+              defaultValue={editTrip?.plannedDistance}
             />
           </FormField>
         </div>
 
-        <FormActions onCancel={() => onOpenChange(false)} loading={loading} submitLabel="Create Trip" />
+        <FormActions onCancel={() => onOpenChange(false)} loading={loading} submitLabel={editTrip ? "Update Trip" : "Create Trip"} />
       </form>
     </ModalForm>
   );

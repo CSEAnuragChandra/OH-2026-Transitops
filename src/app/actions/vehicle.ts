@@ -12,6 +12,7 @@ const VehicleSchema = z.object({
   maxLoadCapacity: z.coerce.number().positive("Must be a positive number"),
   acquisitionCost: z.coerce.number().positive("Must be a positive number"),
   odometer: z.coerce.number().min(0, "Cannot be negative"),
+  status: z.enum(["AVAILABLE", "ON_TRIP", "IN_SHOP", "RETIRED"]).optional(),
 });
 
 async function requireFleetManager() {
@@ -56,5 +57,20 @@ export async function deleteVehicle(id: string) {
     data: { status: "RETIRED" },
   });
   revalidatePath("/fleet");
+  return { success: true };
+}
+
+export async function updateVehicleStatus(
+  id: string,
+  status: "AVAILABLE" | "IN_SHOP" | "RETIRED" | "ON_TRIP"
+) {
+  await requireFleetManager();
+
+  await prisma.vehicle.update({
+    where: { id },
+    data: { status },
+  });
+  revalidatePath("/fleet");
+  revalidatePath("/dashboard");
   return { success: true };
 }

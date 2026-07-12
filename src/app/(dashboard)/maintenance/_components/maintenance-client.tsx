@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Wrench, Plus, CheckCircle } from "lucide-react";
+import { Wrench, Plus, CheckCircle, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -103,11 +103,18 @@ function AddLogForm({
 export function MaintenanceClient({ logs, vehicles }: MaintenanceClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const totalCost = logs.reduce((s, l) => s + l.cost, 0);
-  const inShop = logs.filter((l) => l.status === "In Shop").length;
+  const filteredLogs = logs.filter((l) => 
+    l.vehicle.name.toLowerCase().includes(search.toLowerCase()) ||
+    l.vehicle.registrationNumber.toLowerCase().includes(search.toLowerCase()) ||
+    l.description.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const exportData = logs.map((l) => ({
+  const totalCost = filteredLogs.reduce((s, l) => s + l.cost, 0);
+  const inShop = filteredLogs.filter((l) => l.status === "In Shop").length;
+
+  const exportData = filteredLogs.map((l) => ({
     "Vehicle": l.vehicle.name,
     "Reg #": l.vehicle.registrationNumber,
     "Description": l.description,
@@ -137,10 +144,21 @@ export function MaintenanceClient({ logs, vehicles }: MaintenanceClientProps) {
               Maintenance Logs
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {logs.length} log{logs.length !== 1 ? "s" : ""} · Total: {formatCurrency(totalCost)} · {inShop} in shop
+              {filteredLogs.length} log{filteredLogs.length !== 1 ? "s" : ""} · Total: {formatCurrency(totalCost)} · {inShop} in shop
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search logs..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="maintenance" />
             <button
               id="add-maintenance-btn"
@@ -164,14 +182,14 @@ export function MaintenanceClient({ logs, vehicles }: MaintenanceClientProps) {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {logs.length === 0 && (
+              {filteredLogs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
-                    No maintenance logs yet. Click &quot;Add Log&quot; to start tracking.
+                    No maintenance logs found.
                   </td>
                 </tr>
               )}
-              {logs.map((log, i) => (
+              {filteredLogs.map((log, i) => (
                 <motion.tr
                   key={log.id}
                   variants={rowVariants}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Fuel, Plus } from "lucide-react";
+import { Fuel, Plus, Search } from "lucide-react";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
 import { ModalForm, FormField, FormInput, FormSelect, FormActions } from "@/components/ui/modal-form";
@@ -115,11 +115,18 @@ function AddFuelForm({
 
 export function FuelClient({ fuelLogs, vehicles, trips }: FuelClientProps) {
   const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const totalLiters = fuelLogs.reduce((s, l) => s + l.liters, 0);
-  const totalCost = fuelLogs.reduce((s, l) => s + l.cost, 0);
+  const filteredLogs = fuelLogs.filter((l) => 
+    l.vehicle.name.toLowerCase().includes(search.toLowerCase()) ||
+    l.vehicle.registrationNumber.toLowerCase().includes(search.toLowerCase()) ||
+    (l.trip?.code && l.trip.code.toLowerCase().includes(search.toLowerCase()))
+  );
 
-  const exportData = fuelLogs.map((l) => ({
+  const totalLiters = filteredLogs.reduce((s, l) => s + l.liters, 0);
+  const totalCost = filteredLogs.reduce((s, l) => s + l.cost, 0);
+
+  const exportData = filteredLogs.map((l) => ({
     "Vehicle": l.vehicle.name,
     "Reg #": l.vehicle.registrationNumber,
     "Trip": l.trip?.code ?? "—",
@@ -140,10 +147,21 @@ export function FuelClient({ fuelLogs, vehicles, trips }: FuelClientProps) {
               Fuel Logs
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {fuelLogs.length} entries · {totalLiters.toFixed(1)}L total · {formatCurrency(totalCost)} spent
+              {filteredLogs.length} entries · {totalLiters.toFixed(1)}L total · {formatCurrency(totalCost)} spent
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search logs..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="fuel-logs" />
             <button
               id="add-fuel-btn"
@@ -167,14 +185,14 @@ export function FuelClient({ fuelLogs, vehicles, trips }: FuelClientProps) {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {fuelLogs.length === 0 && (
+              {filteredLogs.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
-                    No fuel logs yet. Click &quot;Log Fuel&quot; to add an entry.
+                    No fuel logs found.
                   </td>
                 </tr>
               )}
-              {fuelLogs.map((log, i) => (
+              {filteredLogs.map((log, i) => (
                 <motion.tr
                   key={log.id}
                   variants={rowVariants}

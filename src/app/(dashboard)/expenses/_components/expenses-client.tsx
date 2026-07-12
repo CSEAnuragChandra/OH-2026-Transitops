@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { DollarSign, Plus } from "lucide-react";
+import { DollarSign, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -102,12 +102,19 @@ function AddExpenseForm({
 
 export function ExpensesClient({ expenses, trips }: ExpensesClientProps) {
   const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const totalToll = expenses.reduce((s, e) => s + e.toll, 0);
-  const totalOther = expenses.reduce((s, e) => s + e.other, 0);
+  const filteredExpenses = expenses.filter((e) => 
+    e.trip.code.toLowerCase().includes(search.toLowerCase()) ||
+    e.trip.source.toLowerCase().includes(search.toLowerCase()) ||
+    e.trip.destination.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalToll = filteredExpenses.reduce((s, e) => s + e.toll, 0);
+  const totalOther = filteredExpenses.reduce((s, e) => s + e.other, 0);
   const grandTotal = totalToll + totalOther;
 
-  const exportData = expenses.map((e) => ({
+  const exportData = filteredExpenses.map((e) => ({
     "Trip Code": e.trip.code,
     "Route": `${e.trip.source} → ${e.trip.destination}`,
     "Trip Status": e.trip.status,
@@ -127,10 +134,21 @@ export function ExpensesClient({ expenses, trips }: ExpensesClientProps) {
               Expenses
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {expenses.length} entries · Toll: {formatCurrency(totalToll)} · Other: {formatCurrency(totalOther)} · Grand Total: {formatCurrency(grandTotal)}
+              {filteredExpenses.length} entries · Toll: {formatCurrency(totalToll)} · Other: {formatCurrency(totalOther)} · Grand Total: {formatCurrency(grandTotal)}
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search expenses..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="expenses" />
             <button
               id="add-expense-btn"
@@ -154,14 +172,14 @@ export function ExpensesClient({ expenses, trips }: ExpensesClientProps) {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {expenses.length === 0 && (
+              {filteredExpenses.length === 0 && (
                 <tr>
                   <td colSpan={6} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
-                    No expenses recorded yet.
+                    No expenses found.
                   </td>
                 </tr>
               )}
-              {expenses.map((exp, i) => (
+              {filteredExpenses.map((exp, i) => (
                 <motion.tr
                   key={exp.id}
                   variants={rowVariants}

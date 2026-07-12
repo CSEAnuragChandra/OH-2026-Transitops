@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Route, Plus, Send, CheckCircle, XCircle } from "lucide-react";
+import { Route, Plus, Send, CheckCircle, XCircle, Search, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -65,10 +65,18 @@ export function TripsClient({
 }: TripsClientProps) {
   const router = useRouter();
   const [tripFormOpen, setTripFormOpen] = useState(false);
+  const [editTrip, setEditTrip] = useState<Trip | null>(null);
   const [dispatchTrip, setDispatchTrip] = useState<Trip | null>(null);
   const [completeTrip, setCompleteTrip] = useState<Trip | null>(null);
+  const [search, setSearch] = useState("");
 
-  const exportData = trips.map((t) => ({
+  const filteredTrips = trips.filter((t) => 
+    t.code.toLowerCase().includes(search.toLowerCase()) ||
+    t.source.toLowerCase().includes(search.toLowerCase()) ||
+    t.destination.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const exportData = filteredTrips.map((t) => ({
     "Code": t.code,
     "Source": t.source,
     "Destination": t.destination,
@@ -104,15 +112,26 @@ export function TripsClient({
               Trips
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {trips.length} trip{trips.length !== 1 ? "s" : ""} total
+              {filteredTrips.length} trip{filteredTrips.length !== 1 ? "s" : ""} found
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search trips..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="trips" />
             {canDispatch && (
               <button
                 id="new-trip-btn"
-                onClick={() => setTripFormOpen(true)}
+                onClick={() => { setEditTrip(null); setTripFormOpen(true); }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 gradient-brand"
               >
                 <Plus className="w-4 h-4" />
@@ -135,14 +154,14 @@ export function TripsClient({
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {trips.length === 0 && (
+              {filteredTrips.length === 0 && (
                 <tr>
                   <td colSpan={canDispatch ? 9 : 8} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
-                    No trips yet.
+                    No trips found.
                   </td>
                 </tr>
               )}
-              {trips.map((t, i) => (
+              {filteredTrips.map((t, i) => (
                 <motion.tr
                   key={t.id}
                   variants={rowVariants}
@@ -178,14 +197,23 @@ export function TripsClient({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         {t.status === "DRAFT" && (
-                          <button
-                            onClick={() => setDispatchTrip(t)}
-                            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-blue-500/20 text-blue-400"
-                            title="Dispatch"
-                          >
-                            <Send className="w-3 h-3" />
-                            Dispatch
-                          </button>
+                          <>
+                            <button
+                              onClick={() => { setEditTrip(t); setTripFormOpen(true); }}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-slate-700 text-slate-300"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => setDispatchTrip(t)}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-blue-500/20 text-blue-400"
+                              title="Dispatch"
+                            >
+                              <Send className="w-3 h-3" />
+                              Dispatch
+                            </button>
+                          </>
                         )}
                         {t.status === "DISPATCHED" && (
                           <button
@@ -216,7 +244,12 @@ export function TripsClient({
         </div>
 
         {/* Modals */}
-        <TripForm open={tripFormOpen} onOpenChange={setTripFormOpen} nextCode={nextCode} />
+        <TripForm 
+          open={tripFormOpen} 
+          onOpenChange={setTripFormOpen} 
+          nextCode={nextCode} 
+          editTrip={editTrip}
+        />
 
         {dispatchTrip && (
           <DispatchForm

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Truck, Plus, Pencil, Trash2 } from "lucide-react";
+import { Truck, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -51,8 +51,14 @@ export function FleetClient({ vehicles, isManager }: FleetClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
+  const [search, setSearch] = useState("");
 
-  const exportData = vehicles.map((v) => ({
+  const filteredVehicles = vehicles.filter((v) =>
+    v.name.toLowerCase().includes(search.toLowerCase()) ||
+    v.registrationNumber.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const exportData = filteredVehicles.map((v) => ({
     "Registration": v.registrationNumber,
     "Name": v.name,
     "Type": v.type,
@@ -95,10 +101,21 @@ export function FleetClient({ vehicles, isManager }: FleetClientProps) {
               Fleet Registry
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {vehicles.length} vehicle{vehicles.length !== 1 ? "s" : ""} registered
+              {filteredVehicles.length} vehicle{filteredVehicles.length !== 1 ? "s" : ""} found
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search fleet..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="fleet" />
             {isManager && (
               <button
@@ -126,14 +143,14 @@ export function FleetClient({ vehicles, isManager }: FleetClientProps) {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {vehicles.length === 0 && (
+              {filteredVehicles.length === 0 && (
                 <tr>
                   <td colSpan={isManager ? 9 : 8} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
                     No vehicles found.{isManager ? " Click 'Add Vehicle' to register one." : ""}
                   </td>
                 </tr>
               )}
-              {vehicles.map((v, i) => (
+              {filteredVehicles.map((v, i) => (
                 <motion.tr
                   key={v.id}
                   variants={rowVariants}

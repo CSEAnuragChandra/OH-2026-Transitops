@@ -17,6 +17,7 @@ interface VehicleFormProps {
     maxLoadCapacity: number;
     acquisitionCost: number;
     odometer: number;
+    status: string;
   } | null;
 }
 
@@ -129,6 +130,17 @@ export function VehicleForm({ open, onOpenChange, editVehicle }: VehicleFormProp
             defaultValue={editVehicle?.odometer ?? 0}
           />
         </FormField>
+
+        {isEdit && (
+          <FormField label="Vehicle Status">
+            <FormSelect name="status" defaultValue={editVehicle?.status}>
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="ON_TRIP">ON_TRIP</option>
+              <option value="IN_SHOP">IN_SHOP</option>
+              <option value="RETIRED">RETIRED</option>
+            </FormSelect>
+          </FormField>
+        )}
 
         <FormActions
           onCancel={() => onOpenChange(false)}

@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Users, AlertTriangle, Pencil, UserX, Plus } from "lucide-react";
+import { Users, AlertTriangle, Pencil, UserX, Plus, Search, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
 import { DriverForm } from "./driver-form";
-import { deleteDriver } from "@/app/actions/driver";
+import { deleteDriver, updateSafetyScore } from "@/app/actions/driver";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { differenceInDays } from "date-fns";
@@ -53,8 +53,15 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [editDriver, setEditDriver] = useState<Driver | null>(null);
+  const [search, setSearch] = useState("");
 
-  const exportData = drivers.map((d) => ({
+  const filteredDrivers = drivers.filter((d) =>
+    d.name.toLowerCase().includes(search.toLowerCase()) ||
+    d.licenseNumber.toLowerCase().includes(search.toLowerCase()) ||
+    (d.user?.email && d.user.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const exportData = filteredDrivers.map((d) => ({
     "Name": d.name,
     "License #": d.licenseNumber,
     "Category": d.licenseCategory,
@@ -86,6 +93,23 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
     setFormOpen(true);
   }
 
+  async function handleUpdateScore(id: string, name: string, currentScore: number) {
+    const input = prompt(`Enter new safety score (0-100) for ${name}:`, currentScore.toString());
+    if (input === null) return;
+    const score = parseInt(input, 10);
+    if (isNaN(score) || score < 0 || score > 100) {
+      toast.error("Invalid score. Please enter a number between 0 and 100.");
+      return;
+    }
+    try {
+      await updateSafetyScore(id, score);
+      toast.success(`Safety score for ${name} updated to ${score}`);
+      router.refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6 max-w-7xl">
@@ -97,10 +121,21 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
               Drivers
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "var(--fg-muted)" }}>
-              {drivers.length} driver{drivers.length !== 1 ? "s" : ""} registered
+              {filteredDrivers.length} driver{filteredDrivers.length !== 1 ? "s" : ""} found
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search drivers..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+              />
+            </div>
             <ExportButton data={exportData} filename="drivers" />
             {isManager && (
               <button
@@ -128,14 +163,14 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
               </tr>
             </thead>
             <motion.tbody variants={containerVariants} initial="hidden" animate="show">
-              {drivers.length === 0 && (
+              {filteredDrivers.length === 0 && (
                 <tr>
                   <td colSpan={isManager ? 9 : 8} className="text-center py-12" style={{ color: "var(--fg-muted)", background: "var(--bg-card)" }}>
-                    No drivers registered yet.
+                    No drivers found.
                   </td>
                 </tr>
               )}
-              {drivers.map((d, i) => {
+              {filteredDrivers.map((d, i) => {
                 const daysLeft = differenceInDays(new Date(d.licenseExpiry), new Date());
                 const expiryVariant = daysLeft < 0 ? "danger" : daysLeft < 30 ? "danger" : daysLeft < 90 ? "warning" : "success";
 
@@ -191,6 +226,13 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
                             title="Edit driver"
                           >
                             <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleUpdateScore(d.id, d.name, d.safetyScore)}
+                            className="p-1.5 rounded-md transition-colors hover:bg-emerald-500/20 text-emerald-400"
+                            title="Update Safety Score"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
                           </button>
                           {d.status !== "SUSPENDED" && (
                             <button

@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, AlertTriangle, Filter } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Filter, Search, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
 import { differenceInDays } from "date-fns";
 import { formatDate } from "@/lib/utils";
+import { updateSafetyScore } from "@/app/actions/driver";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import type { DriverStatus } from "@prisma/client";
 
 interface Driver {
@@ -36,9 +39,15 @@ const containerVariants = { hidden: {}, show: { transition: { staggerChildren: 0
 const rowVariants = { hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0 } };
 
 export function SafetyClient({ drivers }: { drivers: Driver[] }) {
+  const router = useRouter();
   const [expiryFilter, setExpiryFilter] = useState<ExpiryFilter>("all");
+  const [search, setSearch] = useState("");
 
   const filteredDrivers = drivers.filter((d) => {
+    const matchesSearch = d.name.toLowerCase().includes(search.toLowerCase()) || 
+                          d.licenseNumber.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+
     const daysLeft = differenceInDays(new Date(d.licenseExpiry), new Date());
     switch (expiryFilter) {
       case "expired": return daysLeft < 0;
@@ -78,6 +87,23 @@ export function SafetyClient({ drivers }: { drivers: Driver[] }) {
     { value: "60", label: "Expiring in 60 days" },
     { value: "90", label: "Expiring in 90 days" },
   ];
+
+  async function handleUpdateScore(id: string, name: string, currentScore: number) {
+    const input = prompt(`Enter new safety score (0-100) for ${name}:`, currentScore.toString());
+    if (input === null) return;
+    const score = parseInt(input, 10);
+    if (isNaN(score) || score < 0 || score > 100) {
+      toast.error("Invalid score. Please enter a number between 0 and 100.");
+      return;
+    }
+    try {
+      await updateSafetyScore(id, score);
+      toast.success(`Safety score for ${name} updated to ${score}`);
+      router.refresh();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
 
   return (
     <PageTransition>
@@ -130,6 +156,17 @@ export function SafetyClient({ drivers }: { drivers: Driver[] }) {
               {opt.label}
             </button>
           ))}
+          <div className="flex-1 max-w-sm relative ml-auto">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search drivers..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--fg)" }}
+            />
+          </div>
         </div>
 
         {/* Table */}
@@ -137,7 +174,7 @@ export function SafetyClient({ drivers }: { drivers: Driver[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
-                {["Driver", "Safety Score", "License Expiry", "Days Left", "Status", "Trips"].map((h) => (
+                {["Driver", "Safety Score", "License Expiry", "Days Left", "Status", "Trips", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--fg-muted)" }}>{h}</th>
                 ))}
               </tr>
@@ -202,6 +239,15 @@ export function SafetyClient({ drivers }: { drivers: Driver[] }) {
                       <Badge variant={statusBadge[d.status] ?? "default"}>{d.status}</Badge>
                     </td>
                     <td className="px-4 py-3">{d._count.trips}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleUpdateScore(d.id, d.name, d.safetyScore)}
+                        className="p-1.5 rounded-md transition-colors hover:bg-emerald-500/20 text-emerald-400"
+                        title="Update Safety Score"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </motion.tr>
                 );
               })}
