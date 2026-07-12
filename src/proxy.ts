@@ -54,6 +54,7 @@ export default auth((req) => {
     pathname.startsWith("/maintenance") ||
     pathname.startsWith("/fuel") ||
     pathname.startsWith("/expenses") ||
+    pathname.startsWith("/analytics") ||
     pathname.startsWith("/safety");
 
   if (isDashboardRoute && !hasAccess(role, pathname)) {

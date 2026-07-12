@@ -1,11 +1,14 @@
 "use client";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import { motion } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
-import { BarChart3, Fuel, Wrench, DollarSign, TrendingUp } from "lucide-react";
+import { BarChart3, Fuel, Wrench, DollarSign, TrendingUp, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -105,6 +108,60 @@ export function AnalyticsClient({
     "Total (₹)": m.maintenance + m.fuel + m.expenses,
   }));
 
+
+  function downloadMonthlyReport() {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("TRANSITOPS — MONTHLY EXPENSE REPORT", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 120, 20);
+
+    // Summary
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("OVERALL SUMMARY", 14, 35);
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Fuel Cost:      ${formatCurrency(totalFuel)}`, 14, 45);
+    doc.text(`Total Maintenance:    ${formatCurrency(totalMaintenance)}`, 14, 52);
+    doc.text(`Total Trip Expenses:  ${formatCurrency(totalExpenses)}`, 14, 59);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`GRAND TOTAL OPEX:     ${formatCurrency(grandTotal)}`, 14, 66);
+
+    // Table
+    doc.setFontSize(14);
+    doc.text("MONTHLY BREAKDOWN (Last 6 Months)", 14, 85);
+
+    const tableData = monthlyData.map(m => [
+      m.month,
+      formatCurrency(m.fuel),
+      formatCurrency(m.maintenance),
+      formatCurrency(m.expenses),
+      formatCurrency(m.maintenance + m.fuel + m.expenses)
+    ]);
+
+    autoTable(doc, {
+      startY: 90,
+      head: [["Month", "Fuel", "Maintenance", "Expenses", "Total"]],
+      body: tableData,
+    });
+
+    // Footer
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text("TransitOps — Smart Transport Operations Platform", 14, pageHeight - 10);
+
+    doc.save(`transitops-monthly-report-${new Date().toISOString().split("T")[0]}.pdf`);
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6 max-w-7xl">
@@ -119,7 +176,17 @@ export function AnalyticsClient({
               Operational cost breakdown — all time
             </p>
           </div>
-          <ExportButton data={exportMonthly} filename="analytics-monthly" />
+          <div className="flex items-center gap-3">
+            <ExportButton data={exportMonthly} filename="analytics-monthly" />
+            <button
+              onClick={downloadMonthlyReport}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border hover:bg-slate-800"
+              style={{ color: "var(--fg)", borderColor: "var(--border)" }}
+            >
+              <FileText className="w-4 h-4" />
+              Download Report
+            </button>
+          </div>
         </div>
 
         {/* KPI Cards */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Truck, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Truck, Plus, Pencil, Trash2, Search, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -47,16 +47,29 @@ const rowVariants = {
   show: { opacity: 1, x: 0 },
 };
 
+type StatusFilter = "ALL" | VehicleStatus;
+const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
+  { label: "All", value: "ALL" },
+  { label: "Available", value: "AVAILABLE" },
+  { label: "On Trip", value: "ON_TRIP" },
+  { label: "In Shop", value: "IN_SHOP" },
+  { label: "Retired", value: "RETIRED" },
+];
+
 export function FleetClient({ vehicles, isManager }: FleetClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
-  const filteredVehicles = vehicles.filter((v) =>
-    v.name.toLowerCase().includes(search.toLowerCase()) ||
-    v.registrationNumber.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredVehicles = vehicles.filter((v) => {
+    const matchesSearch =
+      v.name.toLowerCase().includes(search.toLowerCase()) ||
+      v.registrationNumber.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const exportData = filteredVehicles.map((v) => ({
     "Registration": v.registrationNumber,
@@ -128,6 +141,26 @@ export function FleetClient({ vehicles, isManager }: FleetClientProps) {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-4 h-4 shrink-0" style={{ color: "var(--fg-muted)" }} />
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === f.value ? "gradient-brand text-white" : "hover:bg-slate-700"}`}
+              style={statusFilter !== f.value ? { color: "var(--fg-muted)", background: "var(--bg-card)", border: "1px solid var(--border)" } : {}}
+            >
+              {f.label}
+              {f.value !== "ALL" && (
+                <span className="ml-1.5 opacity-70">
+                  ({vehicles.filter(v => v.status === f.value).length})
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Table */}
