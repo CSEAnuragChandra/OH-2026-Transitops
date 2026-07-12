@@ -1,10 +1,14 @@
 // src/app/(dashboard)/drivers/page.tsx
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Users, AlertTriangle } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import type { Role } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Drivers" };
 
@@ -16,6 +20,9 @@ const statusBadge: Record<string, "success" | "info" | "warning" | "danger"> = {
 };
 
 export default async function DriversPage() {
+  const session = await auth();
+  const role = (session?.user as { role: Role })?.role;
+  if (!role || !hasAccess(role, "/drivers")) redirect("/unauthorized");
   const drivers = await prisma.driver.findMany({
     orderBy: { createdAt: "desc" },
     include: {

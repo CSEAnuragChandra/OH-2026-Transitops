@@ -1,9 +1,13 @@
 // src/app/(dashboard)/trips/page.tsx
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Route } from "lucide-react";
+import type { Role } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Trips" };
 
@@ -15,6 +19,9 @@ const statusBadge: Record<string, "success" | "info" | "warning" | "danger" | "d
 };
 
 export default async function TripsPage() {
+  const session = await auth();
+  const role = (session?.user as { role: Role })?.role;
+  if (!role || !hasAccess(role, "/trips")) redirect("/unauthorized");
   const trips = await prisma.trip.findMany({
     orderBy: { createdAt: "desc" },
     include: {

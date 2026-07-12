@@ -1,34 +1,61 @@
-// src/middleware.ts
+// src/proxy.ts
+// Next.js 16 uses proxy.ts instead of middleware.ts
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { hasAccess, getDefaultRedirect } from "@/lib/rbac";
+import type { Role } from "@prisma/client";
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session;
-  const isLoginPage = nextUrl.pathname === "/login";
+  const pathname = nextUrl.pathname;
+  const isLoginPage = pathname === "/login";
+  const isUnauthorizedPage = pathname === "/unauthorized";
 
-  // Allow public routes
+  // Always allow the unauthorized page
+  if (isUnauthorizedPage) return NextResponse.next();
+
+  // Handle login page
   if (isLoginPage) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+      const role = (session?.user as { role?: Role })?.role;
+      return NextResponse.redirect(
+        new URL(getDefaultRedirect(role ?? "DRIVER"), nextUrl)
+      );
     }
     return NextResponse.next();
   }
 
-  // Protect everything else
+  // All other routes require authentication
   if (!isLoggedIn) {
     return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
-  // Driver role can only access /driver
-  const role = (session?.user as { role?: string })?.role;
-  if (role === "DRIVER" && !nextUrl.pathname.startsWith("/driver")) {
-    return NextResponse.redirect(new URL("/driver", nextUrl));
+  const role = (session?.user as { role?: Role })?.role;
+
+  // DRIVER role has NO frontend access — block immediately
+  if (!role || role === "DRIVER") {
+    return NextResponse.redirect(new URL("/unauthorized", nextUrl));
   }
 
-  // Non-driver roles cannot access /driver
-  if (role !== "DRIVER" && nextUrl.pathname.startsWith("/driver")) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  // Block the /driver route for everyone (no driver portal)
+  if (pathname.startsWith("/driver")) {
+    return NextResponse.redirect(new URL("/unauthorized", nextUrl));
+  }
+
+  // Enforce granular RBAC for dashboard routes
+  const isDashboardRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/fleet") ||
+    pathname.startsWith("/drivers") ||
+    pathname.startsWith("/trips") ||
+    pathname.startsWith("/maintenance") ||
+    pathname.startsWith("/fuel") ||
+    pathname.startsWith("/expenses") ||
+    pathname.startsWith("/safety");
+
+  if (isDashboardRoute && !hasAccess(role, pathname)) {
+    return NextResponse.redirect(new URL("/unauthorized", nextUrl));
   }
 
   return NextResponse.next();

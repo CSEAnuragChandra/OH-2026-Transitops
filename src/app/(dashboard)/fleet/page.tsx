@@ -1,9 +1,13 @@
 // src/app/(dashboard)/fleet/page.tsx
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { Truck, Plus } from "lucide-react";
+import type { Role } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Fleet" };
 
@@ -15,6 +19,9 @@ const statusBadge: Record<string, "success" | "info" | "warning" | "danger"> = {
 };
 
 export default async function FleetPage() {
+  const session = await auth();
+  const role = (session?.user as { role: Role })?.role;
+  if (!role || !hasAccess(role, "/fleet")) redirect("/unauthorized");
   const vehicles = await prisma.vehicle.findMany({
     orderBy: { createdAt: "desc" },
     include: {

@@ -1,11 +1,18 @@
 // src/app/(dashboard)/fuel/page.tsx
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasAccess } from "@/lib/rbac";
 import { Fuel } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Role } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Fuel Logs" };
 
-export default function FuelPage() {
+export default async function FuelPage() {
+  const session = await auth();
+  const role = (session?.user as { role: Role })?.role;
+  if (!role || !hasAccess(role, "/fuel")) redirect("/unauthorized");
   return (
     <div className="space-y-6 max-w-7xl">
       <div>
