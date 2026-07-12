@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Route, Plus, Send, CheckCircle, XCircle, Search, Pencil } from "lucide-react";
+import { Route, Plus, Send, CheckCircle, XCircle, Search, Pencil, Filter, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -56,6 +56,38 @@ const rowVariants = {
   show: { opacity: 1, x: 0 },
 };
 
+type TripStatusFilter = "ALL" | TripStatus;
+const TRIP_STATUS_FILTERS: { label: string; value: TripStatusFilter }[] = [
+  { label: "All", value: "ALL" },
+  { label: "Draft", value: "DRAFT" },
+  { label: "Dispatched", value: "DISPATCHED" },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "Cancelled", value: "CANCELLED" },
+];
+
+function downloadManifest(t: Trip) {
+  const lines = [
+    `TRIP MANIFEST — ${t.code}`,
+    `${"-".repeat(40)}`,
+    `Route:       ${t.source} → ${t.destination}`,
+    `Cargo:       ${t.cargoWeight} T`,
+    `Distance:    ${t.plannedDistance} km`,
+    `Status:      ${t.status}`,
+    `Driver:      ${t.driver?.name ?? "—"}`,
+    `Vehicle:     ${t.vehicle?.name ?? "—"} (${t.vehicle?.registrationNumber ?? "—"})`,
+    `Created:     ${new Date(t.createdAt).toLocaleString("en-IN")}`,
+    "",
+    `Generated:   ${new Date().toLocaleString("en-IN")}`,
+    `${"-".repeat(40)}`,
+    "TransitOps — Smart Transport Operations",
+  ].join("\n");
+  const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `manifest-${t.code}.txt`; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function TripsClient({
   trips,
   availableVehicles,
@@ -69,12 +101,16 @@ export function TripsClient({
   const [dispatchTrip, setDispatchTrip] = useState<Trip | null>(null);
   const [completeTrip, setCompleteTrip] = useState<Trip | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TripStatusFilter>("ALL");
 
-  const filteredTrips = trips.filter((t) => 
-    t.code.toLowerCase().includes(search.toLowerCase()) ||
-    t.source.toLowerCase().includes(search.toLowerCase()) ||
-    t.destination.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTrips = trips.filter((t) => {
+    const matchesSearch =
+      t.code.toLowerCase().includes(search.toLowerCase()) ||
+      t.source.toLowerCase().includes(search.toLowerCase()) ||
+      t.destination.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || t.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const exportData = filteredTrips.map((t) => ({
     "Code": t.code,
@@ -139,6 +175,26 @@ export function TripsClient({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-4 h-4 shrink-0" style={{ color: "var(--fg-muted)" }} />
+          {TRIP_STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === f.value ? "gradient-brand text-white" : "hover:bg-slate-700"}`}
+              style={statusFilter !== f.value ? { color: "var(--fg-muted)", background: "var(--bg-card)", border: "1px solid var(--border)" } : {}}
+            >
+              {f.label}
+              {f.value !== "ALL" && (
+                <span className="ml-1.5 opacity-70">
+                  ({trips.filter(t => t.status === f.value).length})
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Table */}
@@ -232,6 +288,15 @@ export function TripsClient({
                             title="Cancel"
                           >
                             <XCircle className="w-3 h-3" />
+                          </button>
+                        )}
+                        {(t.status === "DISPATCHED" || t.status === "COMPLETED") && (
+                          <button
+                            onClick={() => downloadManifest(t)}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors hover:bg-slate-700 text-slate-400"
+                            title="Download Manifest"
+                          >
+                            <FileText className="w-3 h-3" />
                           </button>
                         )}
                       </div>
