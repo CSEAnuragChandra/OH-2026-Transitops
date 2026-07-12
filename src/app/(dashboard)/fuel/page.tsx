@@ -1,11 +1,19 @@
 // src/app/(dashboard)/fuel/page.tsx
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { hasAccess } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@prisma/client";
 import { FuelClient } from "./_components/fuel-client";
 
 export const metadata: Metadata = { title: "Fuel Logs | TransitOps" };
 
 export default async function FuelPage() {
+  const session = await auth();
+  const role = (session?.user as { role: Role })?.role;
+  if (!role || !hasAccess(role, "/fuel")) redirect("/unauthorized");
+
   const [fuelLogs, vehicles, trips] = await Promise.all([
     prisma.fuelLog.findMany({
       include: {
