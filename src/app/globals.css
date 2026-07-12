@@ -3,27 +3,27 @@
 /* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
   /* Brand palette */
-  --brand-50: #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-500: #3b82f6;
-  --brand-600: #2563eb;
-  --brand-700: #1d4ed8;
-  --brand-900: #1e3a8a;
+  --brand-50: #BDD8E9;
+  --brand-100: #7BBDE8;
+  --brand-500: #6EA2B3;
+  --brand-600: #4E8EA2;
+  --brand-700: #0A4174;
+  --brand-900: #001D39;
 
   /* Neutrals (light) */
-  --bg: #f8fafc;
+  --bg: #F0F7FA;
   --bg-card: #ffffff;
-  --bg-sidebar: #0f172a;
+  --bg-sidebar: #001D39;
   --border: #e2e8f0;
   --muted: #94a3b8;
-  --fg: #0f172a;
-  --fg-muted: #64748b;
+  --fg: #001D39;
+  --fg-muted: #49769F;
 
   /* Status colours */
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --info: #3b82f6;
+  --info: #0A4174;
 
   /* Radius */
   --radius: 0.5rem;
@@ -31,13 +31,13 @@
 }
 
 .dark {
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --bg-sidebar: #020617;
-  --border: #334155;
-  --muted: #475569;
-  --fg: #f1f5f9;
-  --fg-muted: #94a3b8;
+  --bg: #001D39;
+  --bg-card: #0A4174;
+  --bg-sidebar: #001529;
+  --border: #49769F;
+  --muted: #6EA2B3;
+  --fg: #BDD8E9;
+  --fg-muted: #7BBDE8;
 }
 
 @theme inline {
@@ -76,9 +76,11 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--muted);
   border-radius: 999px;
@@ -93,11 +95,11 @@ body {
 }
 
 .gradient-brand {
-  background: linear-gradient(135deg, var(--brand-600) 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-900) 100%);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--brand-500) 0%, #a78bfa 100%);
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
