@@ -16,6 +16,7 @@ export const ROUTE_ROLES: Record<string, Role[]> = {
   "/maintenance":["FLEET_MANAGER", "SAFETY_OFFICER"],
   "/fuel":       ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
   "/expenses":   ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
+  "/analytics":  ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
   "/safety":     ["FLEET_MANAGER", "SAFETY_OFFICER"],
 };
 

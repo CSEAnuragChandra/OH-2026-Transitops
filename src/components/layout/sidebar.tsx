@@ -99,8 +99,8 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
 
   return (
     <aside
-      className="flex flex-col h-screen w-60 shrink-0 border-r"
-      style={{ background: "var(--bg-sidebar)", borderColor: "var(--border)" }}
+      className="flex flex-col h-screen w-60 shrink-0 border-r glass z-10"
+      style={{ borderColor: "var(--border)" }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: "var(--border)" }}>
@@ -122,17 +122,17 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group",
                 active
-                  ? "bg-blue-600/20 text-blue-400 font-medium"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                  ? "bg-[var(--brand-600)]/20 text-[var(--fg)] font-medium shadow-[inset_3px_0_0_0_var(--brand-500)]"
+                  : "text-[var(--fg-muted)] hover:bg-white/5 hover:text-[var(--fg)] hover:translate-x-1"
               )}
             >
-              <span className={cn("shrink-0", active ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")}>
+              <span className={cn("shrink-0 transition-colors", active ? "text-[var(--brand-500)]" : "text-[var(--fg-muted)] group-hover:text-[var(--brand-500)]")}>
                 {item.icon}
               </span>
               <span className="flex-1">{item.label}</span>
-              {active && <ChevronRight className="w-3 h-3 text-blue-400" />}
+              {active && <ChevronRight className="w-3 h-3 text-[var(--brand-500)]" />}
             </Link>
           );
         })}
@@ -144,7 +144,7 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
         <button
           id="theme-toggle-btn"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center gap-2 text-xs w-full px-2 py-1.5 rounded-lg transition-colors hover:bg-slate-800"
+          className="flex items-center gap-2 text-xs w-full px-2 py-1.5 rounded-lg transition-colors hover:bg-white/5"
           style={{ color: "var(--fg-muted)" }}
           title="Toggle light/dark mode"
         >
@@ -174,7 +174,8 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
 
         <button
           onClick={() => signOut({ redirectTo: "/login" })}
-          className="flex items-center gap-2 text-xs text-slate-500 hover:text-red-400 transition-colors w-full"
+          className="flex items-center gap-2 text-xs hover:text-red-400 transition-colors w-full"
+          style={{ color: "var(--fg-muted)" }}
         >
           <LogOut className="w-3.5 h-3.5" />
           Sign out
