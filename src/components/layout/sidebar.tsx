@@ -4,9 +4,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard, Truck, Users, Route, Wrench, Fuel,
   DollarSign, ShieldCheck, LogOut, ChevronRight, Gauge,
+  BarChart3, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@prisma/client";
@@ -62,6 +64,12 @@ const navItems: NavItem[] = [
     roles: ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
   },
   {
+    label: "Analytics",
+    href: "/analytics",
+    icon: <BarChart3 className="w-4 h-4" />,
+    roles: ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
+  },
+  {
     label: "Safety",
     href: "/safety",
     icon: <ShieldCheck className="w-4 h-4" />,
@@ -85,6 +93,7 @@ interface SidebarProps {
 
 export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
   const filtered = navItems.filter((item) => item.roles.includes(userRole));
 
@@ -129,9 +138,31 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
         })}
       </nav>
 
-      {/* User */}
-      <div className="border-t p-4" style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center gap-3 mb-3">
+      {/* User + Controls */}
+      <div className="border-t p-4 space-y-3" style={{ borderColor: "var(--border)" }}>
+        {/* Theme Toggle */}
+        <button
+          id="theme-toggle-btn"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="flex items-center gap-2 text-xs w-full px-2 py-1.5 rounded-lg transition-colors hover:bg-slate-800"
+          style={{ color: "var(--fg-muted)" }}
+          title="Toggle light/dark mode"
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              Switch to Light Mode
+            </>
+          ) : (
+            <>
+              <Moon className="w-3.5 h-3.5 text-blue-400" />
+              Switch to Dark Mode
+            </>
+          )}
+        </button>
+
+        {/* User Info */}
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-xs font-bold shrink-0">
             {userName.charAt(0).toUpperCase()}
           </div>
@@ -140,6 +171,7 @@ export function Sidebar({ userName, userEmail, userRole }: SidebarProps) {
             <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
           </div>
         </div>
+
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex items-center gap-2 text-xs text-slate-500 hover:text-red-400 transition-colors w-full"
