@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Legend,
 } from "recharts";
-import { BarChart3, Fuel, Wrench, DollarSign, TrendingUp } from "lucide-react";
+import { BarChart3, Fuel, Wrench, DollarSign, TrendingUp, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -105,6 +105,37 @@ export function AnalyticsClient({
     "Total (₹)": m.maintenance + m.fuel + m.expenses,
   }));
 
+  function downloadMonthlyReport() {
+    const lines = [
+      "TRANSITOPS — MONTHLY EXPENSE REPORT",
+      `${"-".repeat(60)}`,
+      `Generated: ${new Date().toLocaleString("en-IN")}`,
+      "",
+      "OVERALL SUMMARY",
+      `Total Fuel Cost:      ${formatCurrency(totalFuel)}`,
+      `Total Maintenance:    ${formatCurrency(totalMaintenance)}`,
+      `Total Trip Expenses:  ${formatCurrency(totalExpenses)}`,
+      `GRAND TOTAL OPEX:     ${formatCurrency(grandTotal)}`,
+      "",
+      "MONTHLY BREAKDOWN (Last 6 Months)",
+      `${"-".repeat(60)}`,
+      ...monthlyData.map(m => {
+        const total = m.maintenance + m.fuel + m.expenses;
+        return `${m.month.padEnd(10)} | Fuel: ${formatCurrency(m.fuel).padEnd(12)} | Maint: ${formatCurrency(m.maintenance).padEnd(12)} | Exp: ${formatCurrency(m.expenses).padEnd(12)} | Total: ${formatCurrency(total)}`;
+      }),
+      `${"-".repeat(60)}`,
+      "TransitOps — Smart Transport Operations",
+    ].join("\n");
+
+    const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transitops-monthly-report-${new Date().toISOString().split("T")[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6 max-w-7xl">
@@ -119,7 +150,17 @@ export function AnalyticsClient({
               Operational cost breakdown — all time
             </p>
           </div>
-          <ExportButton data={exportMonthly} filename="analytics-monthly" />
+          <div className="flex items-center gap-3">
+            <ExportButton data={exportMonthly} filename="analytics-monthly" />
+            <button
+              onClick={downloadMonthlyReport}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border hover:bg-slate-800"
+              style={{ color: "var(--fg)", borderColor: "var(--border)" }}
+            >
+              <FileText className="w-4 h-4" />
+              Download Report
+            </button>
+          </div>
         </div>
 
         {/* KPI Cards */}
