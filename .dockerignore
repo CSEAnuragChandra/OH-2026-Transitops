@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.gitignore
+README.md
+context
+pnpm-debug.log
+npm-debug.log
