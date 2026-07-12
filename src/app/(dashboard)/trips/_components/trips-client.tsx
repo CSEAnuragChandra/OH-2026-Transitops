@@ -1,5 +1,8 @@
 "use client";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -65,8 +68,6 @@ const TRIP_STATUS_FILTERS: { label: string; value: TripStatusFilter }[] = [
   { label: "Cancelled", value: "CANCELLED" },
 ];
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 function downloadManifest(t: Trip) {
   const doc = new jsPDF();

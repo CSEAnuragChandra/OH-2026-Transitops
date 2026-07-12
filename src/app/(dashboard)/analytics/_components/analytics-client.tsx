@@ -1,5 +1,8 @@
 "use client";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 import { motion } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -105,8 +108,6 @@ export function AnalyticsClient({
     "Total (₹)": m.maintenance + m.fuel + m.expenses,
   }));
 
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
   function downloadMonthlyReport() {
     const doc = new jsPDF();
