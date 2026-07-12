@@ -1,26 +1,104 @@
 @import "tailwindcss";
 
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand palette */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-900: #1e3a8a;
+
+  /* Neutrals (light) */
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #0f172a;
+  --border: #e2e8f0;
+  --muted: #94a3b8;
+  --fg: #0f172a;
+  --fg-muted: #64748b;
+
+  /* Status colours */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Radius */
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+.dark {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #020617;
+  --border: #334155;
+  --muted: #475569;
+  --fg: #f1f5f9;
+  --fg-muted: #94a3b8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--bg-card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 999px;
+}
+
+/* ── Utility classes ───────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, var(--brand-600) 0%, #7c3aed 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand-500) 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
