@@ -52,6 +52,6 @@ export function hasAccess(role: Role, pathname: string): boolean {
  * Returns the default redirect URL for a given role after login.
  */
 export function getDefaultRedirect(role: Role): string {
-  if (role === "DRIVER") return "/unauthorized";
+  if (role === "DRIVER") return "/driver";
   return "/dashboard";
 }
