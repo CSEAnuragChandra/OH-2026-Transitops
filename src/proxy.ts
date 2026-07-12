@@ -33,14 +33,16 @@ export default auth((req) => {
 
   const role = (session?.user as { role?: Role })?.role;
 
-  // DRIVER role has NO frontend access — block immediately
-  if (!role || role === "DRIVER") {
-    return NextResponse.redirect(new URL("/unauthorized", nextUrl));
+  // Driver portal — ONLY DRIVER role may access /driver routes
+  if (pathname === "/driver" || pathname.startsWith("/driver/")) {
+    if (role === "DRIVER") return NextResponse.next();
+    // Non-driver staff hitting /driver → send to dashboard
+    return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
-  // Block the /driver route for everyone (no driver portal)
-  if (pathname.startsWith("/driver")) {
-    return NextResponse.redirect(new URL("/unauthorized", nextUrl));
+  // DRIVER role has NO access to staff routes — redirect to their portal
+  if (!role || role === "DRIVER") {
+    return NextResponse.redirect(new URL("/driver", nextUrl));
   }
 
   // Enforce granular RBAC for dashboard routes

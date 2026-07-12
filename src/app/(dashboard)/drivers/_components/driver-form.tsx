@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Download } from "lucide-react";
 import { ModalForm, FormField, FormInput, FormSelect, FormActions } from "@/components/ui/modal-form";
 import { createDriver, updateDriver } from "@/app/actions/driver";
 
@@ -25,13 +25,16 @@ const LICENSE_CATEGORIES = ["LMV", "HMV", "HGV", "PSV", "Transport", "HPMV"];
 interface Credentials {
   email: string;
   temporaryPassword: string;
+  driverName: string;
 }
 
 function CredentialsDialog({
   credentials,
+  driverName,
   onClose,
 }: {
   credentials: Credentials;
+  driverName: string;
   onClose: () => void;
 }) {
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -48,9 +51,42 @@ function CredentialsDialog({
     }
   };
 
+  const downloadCredentials = () => {
+    const content = [
+      "TransitOps — Driver Login Credentials",
+      "=====================================",
+      "",
+      `Driver Name : ${driverName}`,
+      `Login Email : ${credentials.email}`,
+      `Password    : ${credentials.temporaryPassword}`,
+      "",
+      "⚠  Please change your password after the first login.",
+      "",
+      `Generated on: ${new Date().toLocaleString()}`,
+    ].join("\n");
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transitops-driver-credentials-${driverName.toLowerCase().replace(/\s+/g, "-")}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <ModalForm open={true} onOpenChange={() => {}} title="Driver Account Created" description="Share these credentials with the driver to log in.">
       <div className="space-y-4">
+        {/* Success banner */}
+        <div className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)" }}>
+          <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+          <p className="text-sm font-medium" style={{ color: "var(--fg)" }}>
+            Account successfully created for <strong>{driverName}</strong>
+          </p>
+        </div>
+
         <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--bg)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -80,13 +116,23 @@ function CredentialsDialog({
             </button>
           </div>
         </div>
+
         <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
-          The driver should change their password after the first login.
+          ⚠ The driver should change their password after the first login.
         </p>
-        <div className="flex justify-end pt-2">
+
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            onClick={downloadCredentials}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors hover:bg-slate-700"
+            style={{ borderColor: "var(--border)", color: "var(--fg-muted)" }}
+          >
+            <Download className="w-4 h-4" />
+            Download .txt
+          </button>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-lg text-sm font-semibold text-white gradient-brand"
+            className="flex-1 px-5 py-2.5 rounded-lg text-sm font-semibold text-white gradient-brand"
           >
             Done
           </button>
@@ -119,9 +165,10 @@ export function DriverForm({ open, onOpenChange, editDriver }: DriverFormProps) 
         onOpenChange(false);
         router.refresh();
       } else {
+        const driverName = formData.get("name") as string;
         const result = await createDriver(formData);
         if (result.success) {
-          setCredentials({ email: result.email, temporaryPassword: result.temporaryPassword });
+          setCredentials({ email: result.email, temporaryPassword: result.temporaryPassword, driverName });
           onOpenChange(false);
           router.refresh();
         }
@@ -206,6 +253,7 @@ export function DriverForm({ open, onOpenChange, editDriver }: DriverFormProps) 
       {credentials && (
         <CredentialsDialog
           credentials={credentials}
+          driverName={credentials.driverName}
           onClose={() => setCredentials(null)}
         />
       )}
