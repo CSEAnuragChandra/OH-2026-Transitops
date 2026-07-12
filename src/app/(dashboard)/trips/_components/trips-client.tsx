@@ -65,27 +65,53 @@ const TRIP_STATUS_FILTERS: { label: string; value: TripStatusFilter }[] = [
   { label: "Cancelled", value: "CANCELLED" },
 ];
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 function downloadManifest(t: Trip) {
-  const lines = [
-    `TRIP MANIFEST — ${t.code}`,
-    `${"-".repeat(40)}`,
-    `Route:       ${t.source} → ${t.destination}`,
-    `Cargo:       ${t.cargoWeight} T`,
-    `Distance:    ${t.plannedDistance} km`,
-    `Status:      ${t.status}`,
-    `Driver:      ${t.driver?.name ?? "—"}`,
-    `Vehicle:     ${t.vehicle?.name ?? "—"} (${t.vehicle?.registrationNumber ?? "—"})`,
-    `Created:     ${new Date(t.createdAt).toLocaleString("en-IN")}`,
-    "",
-    `Generated:   ${new Date().toLocaleString("en-IN")}`,
-    `${"-".repeat(40)}`,
-    "TransitOps — Smart Transport Operations",
-  ].join("\n");
-  const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = `manifest-${t.code}.txt`; a.click();
-  URL.revokeObjectURL(url);
+  const doc = new jsPDF();
+  
+  // Title
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("TRANSITOPS — TRIP MANIFEST", 14, 20);
+  
+  // Details
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Trip Code: ${t.code}`, 14, 32);
+  doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 120, 32);
+  doc.text(`Route: ${t.source} -> ${t.destination}`, 14, 40);
+  doc.text(`Cargo Weight: ${t.cargoWeight} Tons`, 14, 46);
+  doc.text(`Planned Distance: ${t.plannedDistance} km`, 14, 52);
+  
+  // Status & Assignment
+  doc.text(`Status: ${t.status}`, 14, 62);
+  doc.text(`Driver: ${t.driver?.name ?? "—"}`, 14, 68);
+  doc.text(`Vehicle: ${t.vehicle?.name ?? "—"} (${t.vehicle?.registrationNumber ?? "—"})`, 14, 74);
+  
+  // Expenses table if any
+  if (t.expenses && t.expenses.length > 0) {
+    doc.text("Expenses Log:", 14, 88);
+    const tableData = t.expenses.map(e => [
+      `Toll: Rs. ${e.toll}`, 
+      `Other: Rs. ${e.other}`, 
+      `Total: Rs. ${e.toll + e.other}`
+    ]);
+    autoTable(doc, {
+      startY: 92,
+      head: [["Toll", "Other", "Total"]],
+      body: tableData,
+    });
+  }
+  
+  // Footer
+  const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+  doc.setFontSize(9);
+  doc.setTextColor(150);
+  doc.text("TransitOps — Smart Transport Operations Platform", 14, pageHeight - 10);
+  
+  doc.save(`manifest-${t.code}.pdf`);
 }
 
 export function TripsClient({

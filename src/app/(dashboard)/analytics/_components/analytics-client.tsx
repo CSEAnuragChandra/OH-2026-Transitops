@@ -105,35 +105,60 @@ export function AnalyticsClient({
     "Total (₹)": m.maintenance + m.fuel + m.expenses,
   }));
 
-  function downloadMonthlyReport() {
-    const lines = [
-      "TRANSITOPS — MONTHLY EXPENSE REPORT",
-      `${"-".repeat(60)}`,
-      `Generated: ${new Date().toLocaleString("en-IN")}`,
-      "",
-      "OVERALL SUMMARY",
-      `Total Fuel Cost:      ${formatCurrency(totalFuel)}`,
-      `Total Maintenance:    ${formatCurrency(totalMaintenance)}`,
-      `Total Trip Expenses:  ${formatCurrency(totalExpenses)}`,
-      `GRAND TOTAL OPEX:     ${formatCurrency(grandTotal)}`,
-      "",
-      "MONTHLY BREAKDOWN (Last 6 Months)",
-      `${"-".repeat(60)}`,
-      ...monthlyData.map(m => {
-        const total = m.maintenance + m.fuel + m.expenses;
-        return `${m.month.padEnd(10)} | Fuel: ${formatCurrency(m.fuel).padEnd(12)} | Maint: ${formatCurrency(m.maintenance).padEnd(12)} | Exp: ${formatCurrency(m.expenses).padEnd(12)} | Total: ${formatCurrency(total)}`;
-      }),
-      `${"-".repeat(60)}`,
-      "TransitOps — Smart Transport Operations",
-    ].join("\n");
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-    const blob = new Blob([lines], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `transitops-monthly-report-${new Date().toISOString().split("T")[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  function downloadMonthlyReport() {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("TRANSITOPS — MONTHLY EXPENSE REPORT", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 120, 20);
+
+    // Summary
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("OVERALL SUMMARY", 14, 35);
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Fuel Cost:      ${formatCurrency(totalFuel)}`, 14, 45);
+    doc.text(`Total Maintenance:    ${formatCurrency(totalMaintenance)}`, 14, 52);
+    doc.text(`Total Trip Expenses:  ${formatCurrency(totalExpenses)}`, 14, 59);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(`GRAND TOTAL OPEX:     ${formatCurrency(grandTotal)}`, 14, 66);
+
+    // Table
+    doc.setFontSize(14);
+    doc.text("MONTHLY BREAKDOWN (Last 6 Months)", 14, 85);
+
+    const tableData = monthlyData.map(m => [
+      m.month,
+      formatCurrency(m.fuel),
+      formatCurrency(m.maintenance),
+      formatCurrency(m.expenses),
+      formatCurrency(m.maintenance + m.fuel + m.expenses)
+    ]);
+
+    autoTable(doc, {
+      startY: 90,
+      head: [["Month", "Fuel", "Maintenance", "Expenses", "Total"]],
+      body: tableData,
+    });
+
+    // Footer
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text("TransitOps — Smart Transport Operations Platform", 14, pageHeight - 10);
+
+    doc.save(`transitops-monthly-report-${new Date().toISOString().split("T")[0]}.pdf`);
   }
 
   return (
