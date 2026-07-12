@@ -8,11 +8,7 @@
 ---
 
 ### 🚀 Live Deployment
-<<<<<<< HEAD
 **[transitops-brown.vercel.app](https://transitops-brown.vercel.app)**
-=======
-**[transitops-brown.vercel.app](https://transitops-brown.vercel.app)** *(Placeholder - replace with actual link)*
->>>>>>> dev
 
 ---
 
