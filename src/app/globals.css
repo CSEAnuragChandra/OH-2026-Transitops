@@ -65,6 +65,8 @@ html {
 body {
   min-height: 100%;
   background-color: var(--bg);
+  background-image: radial-gradient(circle at top right, color-mix(in srgb, var(--brand-600) 15%, transparent) 0%, transparent 40%),
+                    radial-gradient(circle at bottom left, color-mix(in srgb, var(--brand-700) 20%, transparent) 0%, transparent 40%);
   color: var(--fg);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -88,10 +90,11 @@ body {
 
 /* ── Utility classes ───────────────────────────────────────────────────── */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--bg-card) 75%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.2);
 }
 
 .gradient-brand {
