@@ -9,6 +9,8 @@ services:
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
+      AUTH_SECRET: 4f3befff-921c-40a1-b8e7-2a6660c5e9bef54474c3-b3b9-4028-ba2e-790fe747cfd6
+      AUTH_TRUST_HOST: "true"
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       DATABASE_URL: postgresql://transitops:transitops@postgres:5432/transitops?schema=public

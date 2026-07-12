@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -19,10 +21,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as { role: Role }).role = token.role as Role;
-      }
+      session.user ??= {} as typeof session.user;
+      session.user.id = token.id as string;
+      (session.user as { role: Role }).role = token.role as Role;
       return session;
     },
   },

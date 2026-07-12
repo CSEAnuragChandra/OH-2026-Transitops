@@ -12,6 +12,7 @@ export default async function DashboardLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
+  if (!session.user) redirect("/login");
 
   const role = (session.user as { role: Role }).role;
   if (role === "DRIVER") redirect("/driver");
