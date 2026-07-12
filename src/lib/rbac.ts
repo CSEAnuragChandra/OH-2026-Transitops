@@ -16,6 +16,7 @@ export const ROUTE_ROLES: Record<string, Role[]> = {
   "/maintenance":["FLEET_MANAGER", "SAFETY_OFFICER"],
   "/fuel":       ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
   "/expenses":   ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
+  "/analytics":  ["FLEET_MANAGER", "FINANCIAL_ANALYST"],
   "/safety":     ["FLEET_MANAGER", "SAFETY_OFFICER"],
 };
 
@@ -52,6 +53,6 @@ export function hasAccess(role: Role, pathname: string): boolean {
  * Returns the default redirect URL for a given role after login.
  */
 export function getDefaultRedirect(role: Role): string {
-  if (role === "DRIVER") return "/unauthorized";
+  if (role === "DRIVER") return "/driver";
   return "/dashboard";
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Users, AlertTriangle, Pencil, UserX, Plus, Search, ShieldCheck } from "lucide-react";
+import { Users, AlertTriangle, Pencil, UserX, Plus, Search, ShieldCheck, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ExportButton } from "@/components/ui/export-button";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -49,17 +49,30 @@ const rowVariants = {
   show: { opacity: 1, x: 0 },
 };
 
+type DriverStatusFilter = "ALL" | DriverStatus;
+const DRIVER_STATUS_FILTERS: { label: string; value: DriverStatusFilter }[] = [
+  { label: "All", value: "ALL" },
+  { label: "Available", value: "AVAILABLE" },
+  { label: "On Trip", value: "ON_TRIP" },
+  { label: "Off Duty", value: "OFF_DUTY" },
+  { label: "Suspended", value: "SUSPENDED" },
+];
+
 export function DriversClient({ drivers, isManager }: DriversClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [editDriver, setEditDriver] = useState<Driver | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<DriverStatusFilter>("ALL");
 
-  const filteredDrivers = drivers.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.licenseNumber.toLowerCase().includes(search.toLowerCase()) ||
-    (d.user?.email && d.user.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredDrivers = drivers.filter((d) => {
+    const matchesSearch =
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.licenseNumber.toLowerCase().includes(search.toLowerCase()) ||
+      (d.user?.email && d.user.email.toLowerCase().includes(search.toLowerCase()));
+    const matchesStatus = statusFilter === "ALL" || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const exportData = filteredDrivers.map((d) => ({
     "Name": d.name,
@@ -148,6 +161,26 @@ export function DriversClient({ drivers, isManager }: DriversClientProps) {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-4 h-4 shrink-0" style={{ color: "var(--fg-muted)" }} />
+          {DRIVER_STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === f.value ? "gradient-brand text-white" : "hover:bg-slate-700"}`}
+              style={statusFilter !== f.value ? { color: "var(--fg-muted)", background: "var(--bg-card)", border: "1px solid var(--border)" } : {}}
+            >
+              {f.label}
+              {f.value !== "ALL" && (
+                <span className="ml-1.5 opacity-70">
+                  ({drivers.filter(d => d.status === f.value).length})
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Table */}
